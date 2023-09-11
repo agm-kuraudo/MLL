@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (MLL)" project-jdk-type="Python SDK" />
+  <component name="Black">
+    <option name="enabledOnReformat" value="true" />
+    <option name="executionMode" value="BINARY" />
+    <option name="pathToExecutable" value="C:\ProgramData\Anaconda3\Scripts\black.exe" />
+    <option name="sdkUUID" value="9e170003-7a71-42e8-b1cb-2700e1ebf4f5" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.8.10 Docker (tensorflow/tensorflow:latest-gpu)" project-jdk-type="Python SDK" />
 </project>
