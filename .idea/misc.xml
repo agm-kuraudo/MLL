@@ -6,5 +6,5 @@
     <option name="pathToExecutable" value="C:\ProgramData\Anaconda3\Scripts\black.exe" />
     <option name="sdkName" value="Remote Python 3.8.10 Docker (tensorflow/tensorflow:latest-gpu)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.8.10 Docker (tensorflow/tensorflow:latest-gpu)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.11.0rc1 Docker (&lt;none&gt;:&lt;none&gt;)" project-jdk-type="Python SDK" />
 </project>
