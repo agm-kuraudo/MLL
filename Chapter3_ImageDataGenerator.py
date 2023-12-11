@@ -19,19 +19,19 @@ validation_url = "https://storage.googleapis.com/learning-datasets/validation-ho
 file_name = "horse-or-human.zip"
 validation_file_name = "validation-horse-or-human.zip"
 
-training_dir = "horse-or-human/training/"
-validation_dir = "horse-or-human/validation/"
+training_dir = "/app/horse-or-human/training/"
+validation_dir = "/app/horse-or-human/validation/"
 
-# urllib.request.urlretrieve(url, file_name)
+urllib.request.urlretrieve(url, file_name)
 
 # zip_ref = zipfile.ZipFile(file_name, 'r')
 # zip_ref.extractall(training_dir)
 # zip_ref.close()
-
-urllib.request.urlretrieve(validation_url, validation_file_name)
-zip_ref = zipfile.ZipFile(validation_file_name, 'r')
-zip_ref.extractall(validation_dir)
-zip_ref.close()
+#
+# urllib.request.urlretrieve(validation_url, validation_file_name)
+# zip_ref = zipfile.ZipFile(validation_file_name, 'r')
+# zip_ref.extractall(validation_dir)
+# zip_ref.close()
 
 # Create an instance of ImageDataGenerator, and we can generate images for training by flowing from a directory
 
@@ -78,6 +78,26 @@ history = model.fit(
     epochs=15,
     validation_data=validation_generator
 )
+
+test_images = ["Picture1.jpg", "Picture2.png"]
+
+from keras.preprocessing import image
+
+for pic in test_images:
+
+    img = image.load_img("/app/newtestdata/" + pic, target_size=(300,300))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+
+    image_tensor = np.vstack([x])
+    classes = model.predict(image_tensor)
+    print(classes)
+    print(classes[0])
+
+    if classes[0] > 0.5:
+        print(pic + ' is a human')
+    else:
+        print(pic + ' is a horse')
 
 
 
