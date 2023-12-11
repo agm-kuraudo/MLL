@@ -4,7 +4,7 @@
       <settings>
         <option name="imageTag" value="agm-karaudo/newtensor" />
         <option name="attachToContainerNeeded" value="true" />
-        <option name="command" value="python /app/Chapter3_ImageDataGenerator.py" />
+        <option name="command" value="python /app/Chapter3_TransferLearning.py" />
         <option name="containerName" value="thirsty_driscoll" />
         <option name="commandLineOptions" value="--gpus all --runtime=nvidia --privileged -it --volume $PROJECT_DIR$/../mll:/app" />
         <option name="showCommandPreview" value="true" />
