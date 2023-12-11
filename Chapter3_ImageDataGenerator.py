@@ -36,8 +36,25 @@ urllib.request.urlretrieve(url, file_name)
 # Create an instance of ImageDataGenerator, and we can generate images for training by flowing from a directory
 
 # All images will be rescaled by 1./255
-train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1/255)
-validation_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1/255)
+train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+    rescale=1/255,
+    rotation_range=40,
+    width_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+
+validation_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+    rescale=1/255,
+    rotation_range=40,
+    width_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
 
 train_generator = train_datagen.flow_from_directory(
     training_dir,
@@ -85,11 +102,16 @@ from keras.preprocessing import image
 
 for pic in test_images:
 
+    # Here we are loading the image (which can be any size) then resizes to expected side (300, 300).
+    # The next line of code converts to a 2D array. The models needs a 3D array as specified by the "input shape".
+    # Fortunately numpy provides an expand_dims method that handles this for us.
     img = image.load_img("/app/newtestdata/" + pic, target_size=(300,300))
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
 
+    # this line stacks vertically to match our training data
     image_tensor = np.vstack([x])
+    # this does the predicting
     classes = model.predict(image_tensor)
     print(classes)
     print(classes[0])
