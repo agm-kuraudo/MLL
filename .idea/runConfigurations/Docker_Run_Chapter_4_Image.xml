@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Docker Run Chapter 3 Image" type="docker-deploy" factoryName="docker-image" server-name="Docker">
+  <configuration default="false" name="Docker Run Chapter 4 Image" type="docker-deploy" factoryName="docker-image" server-name="Docker">
     <deployment type="docker-image">
       <settings>
         <option name="imageTag" value="agm-karaudo/newtensor" />
         <option name="attachToContainerNeeded" value="true" />
-        <option name="command" value="python /app/Chapter3_TransferLearning.py" />
+        <option name="command" value="python /app/Chapter4.py" />
         <option name="containerName" value="thirsty_driscoll" />
         <option name="commandLineOptions" value="--gpus all --runtime=nvidia --privileged -it --volume $PROJECT_DIR$/../mll:/app" />
         <option name="showCommandPreview" value="true" />
