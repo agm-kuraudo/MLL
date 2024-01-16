@@ -7,7 +7,7 @@ sentences = [
     'Today is a rainy day'
 ]
 
-tokenizer = Tokenizer(num_words=100)
+tokenizer = Tokenizer(num_words=100, oov_token='<OOV>')
 tokenizer.fit_on_texts(sentences)
 word_index = tokenizer.word_index
 print(word_index)
