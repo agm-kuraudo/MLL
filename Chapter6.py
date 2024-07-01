@@ -94,9 +94,10 @@ tokenizer = Tokenizer(num_words=vocab_size, oov_token=oov_token)
 adam = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
 
 model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(10000, 16),
+    tf.keras.layers.Embedding(2000, 7),
     tf.keras.layers.GlobalAveragePooling1D(),
-    tf.keras.layers.Dense(24, activation='relu'),
+    tf.keras.layers.Dense(8, activation='relu'),
+    tf.keras.layers.Dropout(.25),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
