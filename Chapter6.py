@@ -91,6 +91,8 @@ tokenizer = Tokenizer(num_words=vocab_size, oov_token=oov_token)
 # The dimensions will be learned over time as the training data is matched to labels
 # tf.keras.layers.Embedding(vocab_size, embedding_dim)
 
+adam = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+
 model = tf.keras.Sequential([
     tf.keras.layers.Embedding(10000, 16),
     tf.keras.layers.GlobalAveragePooling1D(),
