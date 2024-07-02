@@ -96,8 +96,8 @@ adam = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, 
 model = tf.keras.Sequential([
     tf.keras.layers.Embedding(2000, 7),
     tf.keras.layers.GlobalAveragePooling1D(),
-    tf.keras.layers.Dense(8, activation='relu'),
-    tf.keras.layers.Dropout(.25),
+    tf.keras.layers.Dense(8, activation='relu', kernal_regularizer=tf.keras.regularizers.l2(0.01)),
+    # tf.keras.layers.Dropout(.25),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
