@@ -63,7 +63,7 @@ training_labels = labels[0:training_size]
 testing_labels = labels[training_size:]
 
 vocab_size = 20000
-max_length = 10
+max_length = 100
 trunc_type='post'
 padding_type='post'
 oov_token = '<OOV>'
@@ -73,10 +73,10 @@ tokenizer.fit_on_texts(training_sentences)
 word_index = tokenizer.word_index
 
 training_sequences = tokenizer.texts_to_sequences(training_sentences)
-training_padded = pad_sequences(training_sequences, padding='post')
+training_padded = pad_sequences(training_sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
 
 testing_sequences = tokenizer.texts_to_sequences(testing_sentences)
-testing_padded = pad_sequences(testing_sequences, padding='post')
+testing_padded = pad_sequences(testing_sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
 
 # print(word_index)
 
@@ -106,3 +106,15 @@ model.summary()
 num_epochs = 100
 history = model.fit(training_padded, training_labels, epochs=num_epochs, validation_data=(testing_padded, testing_labels), verbose=2)
 
+################# Testing the model ######################################
+
+sentences = ["granny starting to fear spiders in the garden might be real",
+             "game of thrones season finale showing this sunday night",
+             "TensorFlow book will be best seller"]
+
+sequences = tokenizer.texts_to_sequences(sentences)
+print(sequences)
+padded = pad_sequences(sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
+print(padded)
+
+print(model.predict(padded))
