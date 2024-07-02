@@ -86,7 +86,7 @@ training_labels = np.array(training_labels)
 testing_padded = np.array(testing_padded)
 testing_labels = np.array(testing_labels)
 
-tokenizer = Tokenizer(num_words=vocab_size, oov_token=oov_token)
+#tokenizer = Tokenizer(num_words=vocab_size, oov_token=oov_token)
 # To initialise an embedding layers you need the vocab size and a specified number of embedding dimensions.
 # The dimensions will be learned over time as the training data is matched to labels
 # tf.keras.layers.Embedding(vocab_size, embedding_dim)
@@ -96,7 +96,7 @@ adam = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, 
 model = tf.keras.Sequential([
     tf.keras.layers.Embedding(2000, 7),
     tf.keras.layers.GlobalAveragePooling1D(),
-    tf.keras.layers.Dense(8, activation='relu', kernal_regularizer=tf.keras.regularizers.l2(0.01)),
+    tf.keras.layers.Dense(8, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
     # tf.keras.layers.Dropout(.25),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
@@ -108,13 +108,10 @@ history = model.fit(training_padded, training_labels, epochs=num_epochs, validat
 
 ################# Testing the model ######################################
 
-sentences = ["granny starting to fear spiders in the garden might be real",
-             "game of thrones season finale showing this sunday night",
-             "TensorFlow book will be best seller"]
 
+sentences = ["granny starting to fear spiders in the garden might be real", "game of thrones season finale showing this sunday night", "TensorFlow book will be a best seller"]
 sequences = tokenizer.texts_to_sequences(sentences)
 print(sequences)
 padded = pad_sequences(sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
 print(padded)
-
 print(model.predict(padded))
