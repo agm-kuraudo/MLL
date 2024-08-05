@@ -93,14 +93,17 @@ testing_labels = np.array(testing_labels)
 
 adam = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
 
+vocab_size = 2000
+embedding_dim = 64
+
 model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(2000, 7),
-    tf.keras.layers.GlobalAveragePooling1D(),
-    tf.keras.layers.Dense(8, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
-    # tf.keras.layers.Dropout(.25),
+    tf.keras.layers.Embedding(vocab_size, embedding_dim),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(embedding_dim)),
+    tf.keras.layers.Dense(24, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+adam = tf.keras.optimizers.Adam(learning_rate=0.00001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+model.compile(loss='binary_crossentropy', optimizer=adam, metrics=['accuracy'])
 model.summary()
 
 num_epochs = 100
