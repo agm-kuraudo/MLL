@@ -98,6 +98,7 @@ embedding_dim = 64
 
 model = tf.keras.Sequential([
     tf.keras.layers.Embedding(vocab_size, embedding_dim),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(embedding_dim, return_sequences=True)),
     tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(embedding_dim)),
     tf.keras.layers.Dense(24, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')
