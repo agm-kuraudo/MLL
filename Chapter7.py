@@ -103,7 +103,7 @@ model = tf.keras.Sequential([
     tf.keras.layers.Dense(24, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
-adam = tf.keras.optimizers.Adam(learning_rate=0.00001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+adam = tf.keras.optimizers.Adam(learning_rate=0.000008, beta_1=0.9, beta_2=0.999, amsgrad=False)
 model.compile(loss='binary_crossentropy', optimizer=adam, metrics=['accuracy'])
 model.summary()
 
