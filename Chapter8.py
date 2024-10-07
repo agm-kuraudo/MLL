@@ -44,7 +44,7 @@ model.add(Embedding(total_words, 8))
 model.add(Bidirectional(LSTM(max_sequence_len - 1)))
 model.add(Dense(total_words, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-history = model.fit(xs, ys, epochs=1500, verbose=1)
+history = model.fit(xs, ys, epochs=150, verbose=1)
 
 
 seed_text = "in the town of athy"
