@@ -45,3 +45,18 @@ model.add(Bidirectional(LSTM(max_sequence_len - 1)))
 model.add(Dense(total_words, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 history = model.fit(xs, ys, epochs=1500, verbose=1)
+
+
+seed_text = "in the town of athy"
+
+token_list = tokenizer.texts_to_sequences([seed_text])[0]
+token_list = pad_sequences([token_list], maxlen=max_sequence_len-1, padding='pre')
+#print(model.predict(token_list))
+predicted = model.predict_classes(token_list)
+pred_classes=model.predict(token_list)
+print(pred_classes.reshape(-1)[predicted])
+print(predicted)
+for word, index in tokenizer.word_index.items():
+	if index == predicted:
+		print(word)
+		break
