@@ -52,7 +52,10 @@ seed_text = "in the town of athy"
 token_list = tokenizer.texts_to_sequences([seed_text])[0]
 token_list = pad_sequences([token_list], maxlen=max_sequence_len-1, padding='pre')
 #print(model.predict(token_list))
-predicted = model.predict_classes(token_list)
+#predicted = model.predict_classes(token_list)
+predicted = np.argmax(model.predict(token_list), axis=-1)
+
+
 pred_classes=model.predict(token_list)
 print(pred_classes.reshape(-1)[predicted])
 print(predicted)
