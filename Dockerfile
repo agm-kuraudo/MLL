@@ -7,5 +7,6 @@ RUN python -m pip install beautifulsoup4
 RUN python -m pip install matplotlib
 RUN python -m pip install PyQt5
 RUN python -m pip install tk-tools
+RUN python -m pip install pandas
 
 COPY . /app
