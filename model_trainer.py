@@ -67,15 +67,19 @@ model = tf.keras.models.Sequential([
 ])
 print("Model defined.")
 
-model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(learning_rate=1e-5, momentum=0.5))
+
+lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch/20))
+
+
+model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(learning_rate=1e-8, momentum=0.9))
 print("Model compiled.")
 
 # Train the model with validation data
-history = model.fit(train_windowed_dataset, epochs=20, validation_data=val_windowed_dataset, verbose=1)
+history = model.fit(train_windowed_dataset, epochs=100, callbacks=[lr_schedule], validation_data=val_windowed_dataset, verbose=1)
 print("Model training completed.")
 
 # Save the model to a file
-model.save('/app/models/my_model.h5')
+model.save('/app/models/my_model_v2.h5')
 print("Model saved successfully.")
 
 # Plot training and validation loss
@@ -91,7 +95,13 @@ plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.savefig('/app/tmp/training_validation_loss.png')
-plt.show()
+#plt.show()
+
+lrs=1e-8 * (10 ** (np.arange(100) / 20))
+plt.semilogy(lrs, history.history['loss'])
+plt.axis([1e-8, 1e-3, 0, 300])
+plt.savefig('/app/tmp/learning_rate_tuning.png')
+
 
 # Plot training and validation MAE if available
 if 'mae' in history_dict:

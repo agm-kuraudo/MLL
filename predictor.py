@@ -22,7 +22,7 @@ print(f"The normalized_new_values is: {normalized_new_values.flatten()}")
 normalized_new_values = normalized_new_values.reshape(1, -1, 1)
 
 # Load the trained model
-model = tf.keras.models.load_model('/app/models/my_model.h5')
+model = tf.keras.models.load_model('/app/models/my_model_v1.h5')
 
 # Predict the next value
 normalized_predicted_value = model.predict(normalized_new_values)
