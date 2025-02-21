@@ -2,6 +2,7 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+from kerastuner.tuners import RandomSearch
 
 # Check for GPU availability
 print(tf.config.list_physical_devices('GPU'))
@@ -68,14 +69,15 @@ model = tf.keras.models.Sequential([
 print("Model defined.")
 
 
-lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch/20))
+#lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch/20))
 
 
-model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(learning_rate=1e-8, momentum=0.9))
+model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(learning_rate=1e-4, momentum=0.9))
 print("Model compiled.")
 
 # Train the model with validation data
-history = model.fit(train_windowed_dataset, epochs=100, callbacks=[lr_schedule], validation_data=val_windowed_dataset, verbose=1)
+#history = model.fit(train_windowed_dataset, epochs=100, callbacks=[lr_schedule], validation_data=val_windowed_dataset, verbose=1)
+history = model.fit(train_windowed_dataset, epochs=100, validation_data=val_windowed_dataset, verbose=1)
 print("Model training completed.")
 
 # Save the model to a file
@@ -97,10 +99,10 @@ plt.legend()
 plt.savefig('/app/tmp/training_validation_loss.png')
 #plt.show()
 
-lrs=1e-8 * (10 ** (np.arange(100) / 20))
-plt.semilogy(lrs, history.history['loss'])
-plt.axis([1e-8, 1e-3, 0, 300])
-plt.savefig('/app/tmp/learning_rate_tuning.png')
+# lrs=1e-8 * (10 ** (np.arange(100) / 20))
+# plt.semilogy(lrs, history.history['loss'])
+# plt.axis([1e-8, 1e-3, 0, 300])
+# plt.savefig('/app/tmp/learning_rate_tuning.png')
 
 
 # Plot training and validation MAE if available
