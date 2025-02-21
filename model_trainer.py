@@ -58,22 +58,30 @@ print("Windowed datasets created for training and validation.")
 for x, y in train_windowed_dataset.take(1):
     print(f"Windowed input shape: {x.shape}, Windowed target shape: {y.shape}")
 
-# Define the model
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Input(shape=(window_size, 1)),
-    tf.keras.layers.Conv1D(filters=128, kernel_size=3, padding="causal", activation=tf.nn.relu),
-    tf.keras.layers.Dense(10, activation="relu"),
-    tf.keras.layers.Dense(10, activation="relu"),
-    tf.keras.layers.Dense(1)
-])
-print("Model defined.")
+def build_model(hp):
+    # Define the model
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Input(shape=(window_size, 1)),
+        tf.keras.layers.Conv1D(filters=128, kernel_size=3, padding="causal", activation=tf.nn.relu),
+        tf.keras.layers.Dense(hp.Int('units', min_value=10, max_value=40, step=2), activation="relu"),
+        tf.keras.layers.Dense(10, activation="relu"),
+        tf.keras.layers.Dense(1)
+    ])
+    print("Model defined.")
+    model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(momentum=hp.Choice('momentum', values=[.9,.7,.5,.3]), learning_rate=1e-4))
+    print("Model compiled.")
+    return model
 
+
+tuner = RandomSearch(build_model, objective='loss', max_trials=150, executions_per_trial=1, directory='models', project_name='trade_model')
+
+tuner.search(train_windowed_dataset, epochs=20, validation_data=val_windowed_dataset, verbose=1)
 
 #lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch/20))
 
+tuner.results_summary()
 
-model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(learning_rate=1e-4, momentum=0.9))
-print("Model compiled.")
+model = tuner.get_best_models(num_models=1)[0]
 
 # Train the model with validation data
 #history = model.fit(train_windowed_dataset, epochs=100, callbacks=[lr_schedule], validation_data=val_windowed_dataset, verbose=1)
