@@ -18,4 +18,4 @@ ENV PATH=/usr/local/cuda-11.8/bin${PATH:+:${PATH}}
 ENV LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda-11.8
 
-COPY . /app
+COPY .. /app

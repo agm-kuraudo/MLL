@@ -62,13 +62,19 @@ def build_model(hp):
     # Define the model
     model = tf.keras.models.Sequential([
         tf.keras.layers.Input(shape=(window_size, 1)),
-        tf.keras.layers.Conv1D(filters=128, kernel_size=3, padding="causal", activation=tf.nn.relu),
-        tf.keras.layers.Dense(hp.Int('units', min_value=10, max_value=40, step=2), activation="relu"),
+        tf.keras.layers.Conv1D(filters=hp.Int('units', min_value=128, max_value=256, step=64),
+                               kernel_size=hp.Int('kernels', min_value=3, max_value=9, step=3),
+                               strides=hp.Int('strides', min_value=1, max_value=3, step=1),
+                               padding="causal", activation=tf.nn.relu),
+        #tf.keras.layers.Dense(hp.Int('units', min_value=10, max_value=40, step=2), activation="relu"),
+        tf.keras.layers.Dense(10, activation="relu"),
         tf.keras.layers.Dense(10, activation="relu"),
         tf.keras.layers.Dense(1)
     ])
     print("Model defined.")
-    model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(momentum=hp.Choice('momentum', values=[.9,.7,.5,.3]), learning_rate=1e-4))
+    #model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(momentum=hp.Choice('momentum', values=[.9,.7,.5,.3]), learning_rate=1e-4))
+    model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(momentum=0.9,
+                                                                learning_rate=1e-4))
     print("Model compiled.")
     return model
 
@@ -89,7 +95,7 @@ history = model.fit(train_windowed_dataset, epochs=100, validation_data=val_wind
 print("Model training completed.")
 
 # Save the model to a file
-model.save('/app/models/my_model_v2.h5')
+model.save('/app/models/my_model_v3.h5')
 print("Model saved successfully.")
 
 # Plot training and validation loss
