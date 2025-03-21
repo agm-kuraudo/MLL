@@ -62,13 +62,15 @@ def build_model(hp):
     # Define the model
     model = tf.keras.models.Sequential([
         tf.keras.layers.Input(shape=(window_size, 1)),
-        tf.keras.layers.Conv1D(filters=hp.Int('units', min_value=128, max_value=256, step=64),
-                               kernel_size=hp.Int('kernels', min_value=3, max_value=9, step=3),
-                               strides=hp.Int('strides', min_value=1, max_value=3, step=1),
-                               padding="causal", activation=tf.nn.relu),
+        tf.keras.layers.SimpleRNN(100, return_sequences=True),
+        tf.keras.layers.SimpleRNN(100),
+        # tf.keras.layers.Conv1D(filters=hp.Int('units', min_value=128, max_value=256, step=64),
+        #                        kernel_size=hp.Int('kernels', min_value=3, max_value=9, step=3),
+        #                        strides=hp.Int('strides', min_value=1, max_value=3, step=1),
+        #                        padding="causal", activation=tf.nn.relu),
         #tf.keras.layers.Dense(hp.Int('units', min_value=10, max_value=40, step=2), activation="relu"),
-        tf.keras.layers.Dense(10, activation="relu"),
-        tf.keras.layers.Dense(10, activation="relu"),
+        # tf.keras.layers.Dense(10, activation="relu"),
+        # tf.keras.layers.Dense(10, activation="relu"),
         tf.keras.layers.Dense(1)
     ])
     print("Model defined.")
@@ -79,23 +81,37 @@ def build_model(hp):
     return model
 
 
-tuner = RandomSearch(build_model, objective='loss', max_trials=150, executions_per_trial=1, directory='models', project_name='trade_model')
+# tuner = RandomSearch(build_model, objective='loss', max_trials=150, executions_per_trial=1, directory='models', project_name='trade_model')
+#
+# tuner.search(train_windowed_dataset, epochs=20, validation_data=val_windowed_dataset, verbose=1)
+#
+# #lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch/20))
+#
+# tuner.results_summary()
 
-tuner.search(train_windowed_dataset, epochs=20, validation_data=val_windowed_dataset, verbose=1)
-
-#lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch/20))
-
-tuner.results_summary()
-
-model = tuner.get_best_models(num_models=1)[0]
-
+# model = tuner.get_best_models(num_models=1)[0]
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Input(shape=(window_size, 1)),
+    tf.keras.layers.SimpleRNN(100, return_sequences=True),
+    tf.keras.layers.SimpleRNN(100),
+    # tf.keras.layers.Conv1D(filters=hp.Int('units', min_value=128, max_value=256, step=64),
+    #                        kernel_size=hp.Int('kernels', min_value=3, max_value=9, step=3),
+    #                        strides=hp.Int('strides', min_value=1, max_value=3, step=1),
+    #                        padding="causal", activation=tf.nn.relu),
+    #tf.keras.layers.Dense(hp.Int('units', min_value=10, max_value=40, step=2), activation="relu"),
+    # tf.keras.layers.Dense(10, activation="relu"),
+    # tf.keras.layers.Dense(10, activation="relu"),
+    tf.keras.layers.Dense(1)
+])
+model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(momentum=0.9,
+                                                            learning_rate=1e-4))
 # Train the model with validation data
 #history = model.fit(train_windowed_dataset, epochs=100, callbacks=[lr_schedule], validation_data=val_windowed_dataset, verbose=1)
 history = model.fit(train_windowed_dataset, epochs=100, validation_data=val_windowed_dataset, verbose=1)
 print("Model training completed.")
 
 # Save the model to a file
-model.save('/app/models/my_model_v3.h5')
+model.save('/app/models/my_model_v4.h5')
 print("Model saved successfully.")
 
 # Plot training and validation loss

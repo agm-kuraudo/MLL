@@ -3,15 +3,97 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 from sklearn.preprocessing import MinMaxScaler
+import joblib
 import sys
+from datetime import datetime, timedelta
 
-# Set the download flag
-download_ = False
-directory = "/app/stock_data"
+class StockDataProcessor:
 
-if download_:
-    # Download data for the most traded stocks
-    most_traded_stocks = [
+    SCALER_FILE = "/app/models/new_scaler.pkl"
+    NORMALISED_DATA_FILE = "/app/data/new_normalized_combined_data.csv"
+
+    def __init__(self, directory="/app/new_stock_data"):
+        self.directory = directory
+        self.combined_data = pd.DataFrame()
+
+    def download_data(self, tickers):
+        os.makedirs(self.directory, exist_ok=True)
+
+        # Calculate the date 730 days ago from today
+        days_ago = 729
+        start_date = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y-%m-%d')
+
+        for ticker in tickers:
+            try:
+                # Update the download_data method to use the calculated start date
+                data = yf.download(ticker, start=start_date, end=end_date, interval='1h')
+                if data.empty:
+                    raise ValueError(
+                        f"Failed download: {ticker}: YFPricesMissingError('possibly de-listed; no price data found (1h {start_date} -> {end_date})')")
+                data.to_csv(f"{self.directory}/{ticker}_hourly_data.csv")
+            except Exception as e:
+                print(f"Failed to download data for {ticker}: {e}")
+
+    def process_data(self, tickers):
+        for filename in os.listdir(self.directory):
+            if filename.endswith(".csv"):
+                ticker = filename.split('_')[0]
+                if ticker in tickers:
+                    print(f"Processing file: {filename}")
+                    file_path = os.path.join(self.directory, filename)
+                    data = pd.read_csv(file_path, skiprows=2, header=None)
+                    try:
+                        data.columns = ['Datetime', 'Adj Close', 'High', 'Low', 'Open', 'Volume']
+                        print(f"Column names in {filename}: {data.columns.tolist()}")
+                        if 'Datetime' in data.columns:
+                            filtered_data = data[['Datetime', 'Adj Close', 'Open', 'High', 'Low', 'Volume']].copy()
+                            filtered_data.rename(columns={'Datetime': 'Date'}, inplace=True)
+                        elif 'Date' in data.columns:
+                            filtered_data = data[['Date', 'Adj Close', 'Open', 'High', 'Low', 'Volume']]
+                        else:
+                            print(f"Neither 'Datetime' nor 'Date' column found in {filename}. Exiting with failure.")
+                            sys.exit(1)
+                        print(f"Filtered DataFrame shape: {filtered_data.shape}")
+                        filtered_data.loc[:, 'Ticker'] = ticker
+                        self.combined_data = pd.concat([self.combined_data, filtered_data])
+                    except Exception as e:
+                        print(f"Error processing file {filename}: {e}")
+
+        self.combined_data.reset_index(drop=True, inplace=True)
+        #print (self.combined_data.head())
+
+    def normalize_data(self):
+        scaler = MinMaxScaler()
+        # Normalize all relevant columns
+        columns_to_normalize = ['Adj Close', 'Open', 'High', 'Low', 'Volume']
+        normalized_data = pd.DataFrame(scaler.fit_transform(self.combined_data[columns_to_normalize]),
+                                       columns=columns_to_normalize)
+        normalized_data['Date'] = self.combined_data['Date'].values
+        normalized_data['Ticker'] = self.combined_data['Ticker'].values
+        normalized_data.dropna(inplace=True)
+        with open(self.NORMALISED_DATA_FILE, mode='w', newline='') as file:
+            normalized_data.to_csv(file, index=False)
+        joblib.dump(scaler, self.SCALER_FILE)
+        print("The normalized combined dataset has been saved to 'new_normalized_combined_data.csv'.")
+
+    def plot_data(self, ticker):
+        plt.figure(figsize=(15, 7))
+        ticker_data = self.combined_data[self.combined_data['Ticker'] == ticker]
+        plt.plot(ticker_data['Date'], ticker_data['Adj Close'])
+        plt.title(f'{ticker} Adjusted Close Price', fontsize=16)
+        plt.xlabel('Date', fontsize=15)
+        plt.ylabel('Adjusted Close Price', fontsize=15)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.legend(['Adj Close'], prop={'size': 15})
+        plt.savefig(f"/app/tmp/{ticker.lower()}_adj_close_price.png")
+
+if __name__ == "__main__":
+
+
+    '''
+        most_traded_stocks = [
         "TSLA", "NVDA", "AAPL", "META", "LLY", "MSFT", "AMZN", "AMD", "GOOG", "NFLX",
         "BABA", "BA", "BAC", "BBBY", "BBY", "BIDU", "BIIB", "BKNG", "BMY", "BRK.B",
         "C", "CAT", "CCL", "CHTR", "CL", "CMCSA", "COF", "COP", "COST", "CRM",
@@ -20,94 +102,20 @@ if download_:
         "INTC", "JNJ", "JPM", "KO", "LMT", "LOW", "LUV", "MA", "MCD", "MMM",
         "MO", "MRK", "MS", "MU", "NKE"
     ]
+    '''
 
-    # Create the directory if it doesn't exist
-    os.makedirs(directory, exist_ok=True)
 
-    # Download and save data for each ticker
-    for ticker in most_traded_stocks:
-        data = yf.download(ticker, start='2023-01-20', end='2025-01-16', interval='1h')
-        data.to_csv(f"{directory}/{ticker}_hourly_data.csv")
-
-# Create an empty DataFrame to store the combined data
-combined_data = pd.DataFrame()
-
-# Iterate over each file in the directory
-for filename in os.listdir(directory):
-    if filename.endswith(".csv"):
-        print(f"Processing file: {filename}")
-        # Read the CSV file, skipping the first two rows and setting the third row as header
-        file_path = os.path.join(directory, filename)
-        data = pd.read_csv(file_path, skiprows=2, header=None)
-        try:
-            # Manually set the column names
-            data.columns = ['Datetime', 'Adj Close', 'High', 'Low', 'Open', 'Volume']
-
-            # Log the column names
-            print(f"Column names in {filename}: {data.columns.tolist()}")
-
-            # Check if 'Datetime' or 'Date' column exists and filter accordingly
-            if 'Datetime' in data.columns:
-                filtered_data = data[['Datetime', 'Adj Close']]
-                filtered_data.rename(columns={'Datetime': 'Date'}, inplace=True)
-            elif 'Date' in data.columns:
-                filtered_data = data[['Date', 'Adj Close']]
-            else:
-                print(f"Neither 'Datetime' nor 'Date' column found in {filename}. Exiting with failure.")
-                sys.exit(1)
-
-            print(f"Filtered DataFrame shape: {filtered_data.shape}")
-
-            # Add a column for the ticker symbol using .loc
-            filtered_data.loc[:, 'Ticker'] = filename.split('_')[0]
-
-            # Append the data to the combined DataFrame
-            combined_data = pd.concat([combined_data, filtered_data])
-        except Exception as e:
-            print(f"Error processing file {filename}: {e}")
-
-# Ensure the index is unique
-combined_data.reset_index(drop=True, inplace=True)
-
-# Normalize the data using MinMaxScaler
-scaler = MinMaxScaler()
-normalized_data = pd.DataFrame(scaler.fit_transform(combined_data[['Adj Close']]), columns=['Adj Close'])
-
-# Add the non-numeric columns back to the normalized DataFrame
-normalized_data['Date'] = combined_data['Date'].values
-normalized_data['Ticker'] = combined_data['Ticker'].values
-
-# Remove any rows with missing values (if any)
-normalized_data.dropna(inplace=True)
-
-# Save the normalized combined data to a new CSV file without extra newlines and remove the first row if it contains garbage data
-with open("/app/data/normalized_combined_data.csv", mode='w', newline='') as file:
-    normalized_data.to_csv(file, index=False)
-
-print("The normalized combined dataset has been saved to 'normalized_combined_data.csv'.")
-
-# Plot the close price for one of the tickers (e.g., TSLA)
-plt.figure(figsize=(15, 7))
-tsla_data = combined_data[combined_data['Ticker'] == 'TSLA']
-plt.plot(tsla_data['Date'], tsla_data['Adj Close'])
-
-# Set the title and axis label
-plt.title('TSLA Adjusted Close Price', fontsize=16)
-plt.xlabel('Date', fontsize=15)
-plt.ylabel('Adjusted Close Price', fontsize=15)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-plt.legend(['Adj Close'], prop={'size': 15})
-
-# Show the plot
-plt.savefig("/app/tmp/tsla_adj_close_price.png")
-
-from sklearn.preprocessing import MinMaxScaler
-import joblib
-
-# Normalize the data using MinMaxScaler
-scaler = MinMaxScaler()
-normalized_data = pd.DataFrame(scaler.fit_transform(combined_data[['Adj Close']]), columns=['Adj Close'])
-
-# Save the scaler to a file
-joblib.dump(scaler, '/app/models/scaler.pkl')
+    tickers = [
+        "TSLA", "NVDA", "AAPL", "META", "LLY", "MSFT", "AMZN", "AMD", "GOOG", "NFLX",
+        "BABA", "BA", "BAC", "BBBY", "BBY", "BIDU", "BIIB", "BKNG", "BMY", "BRK.B",
+        "C", "CAT", "CCL", "CHTR", "CL", "CMCSA", "COF", "COP", "COST", "CRM",
+        "CSCO", "CVS", "CVX", "DAL", "DIS", "DISH", "DOW", "DUK", "EA", "EBAY",
+        "F", "FDX", "GE", "GM", "GME", "GS", "HAL", "HD", "HON", "IBM",
+        "INTC", "JNJ", "JPM", "KO", "LMT", "LOW", "LUV", "MA", "MCD", "MMM",
+        "MO", "MRK", "MS", "MU", "NKE"
+    ]
+    processor = StockDataProcessor()
+    processor.download_data(tickers)
+    processor.process_data(tickers)
+    processor.normalize_data()
+    # processor.plot_data('TSLA')

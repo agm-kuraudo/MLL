@@ -7,8 +7,8 @@ import tensorflow as tf
 scaler = joblib.load('/app/models/scaler.pkl')
 
 # Define the new input values
-new_values = np.array([229.92, 230.03, 231.18, 230.79, 230.65])
-
+# new_values = np.array([229.92, 230.03, 231.18, 230.79, 230.65])
+new_values = np.array([247.6, 247.1, 247.34, 246.08, 249.57])
 # Convert new values to DataFrame with the same column name
 new_values_df = pd.DataFrame(new_values, columns=['Adj Close'])
 
@@ -22,7 +22,7 @@ print(f"The normalized_new_values is: {normalized_new_values.flatten()}")
 normalized_new_values = normalized_new_values.reshape(1, -1, 1)
 
 # Load the trained model
-model = tf.keras.models.load_model('/app/models/my_model_v2.h5')
+model = tf.keras.models.load_model('/app/models/my_model_v4.h5')
 
 # Predict the next value
 normalized_predicted_value = model.predict(normalized_new_values)
