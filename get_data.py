@@ -19,19 +19,28 @@ class StockDataProcessor:
     def download_data(self, tickers):
         os.makedirs(self.directory, exist_ok=True)
 
-        # Calculate the date 730 days ago from today
-        days_ago = 729
-        start_date = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m-%d')
-        end_date = datetime.now().strftime('%Y-%m-%d')
-
         for ticker in tickers:
+            file_path = f"{self.directory}/{ticker}_hourly_data.csv"
+            if os.path.exists(file_path):
+                existing_data = pd.read_csv(file_path, skiprows=3, header=None)
+                last_date = pd.to_datetime(existing_data[0]).max()
+                print(last_date)
+                start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
+            else:
+                start_date = (datetime.now() - timedelta(days=729)).strftime('%Y-%m-%d')
+
+            end_date = datetime.now().strftime('%Y-%m-%d')
+
             try:
-                # Update the download_data method to use the calculated start date
-                data = yf.download(ticker, start=start_date, end=end_date, interval='1h')
-                if data.empty:
+                new_data = yf.download(ticker, start=start_date, end=end_date, interval='1h')
+                if new_data.empty:
                     raise ValueError(
-                        f"Failed download: {ticker}: YFPricesMissingError('possibly de-listed; no price data found (1h {start_date} -> {end_date})')")
-                data.to_csv(f"{self.directory}/{ticker}_hourly_data.csv")
+                        f"Failed download: {ticker}: YFPricesMissingError('possibly de-listed; no price data found (1h {start_date} -> {end_date})')"
+                    )
+                if os.path.exists(file_path):
+                    new_data.to_csv(file_path, mode='a', header=False)
+                else:
+                    new_data.to_csv(file_path)
             except Exception as e:
                 print(f"Failed to download data for {ticker}: {e}")
 
