@@ -24,9 +24,11 @@ class StockDataProcessor:
             if os.path.exists(file_path):
                 existing_data = pd.read_csv(file_path, skiprows=3, header=None)
                 last_date = pd.to_datetime(existing_data[0]).max()
+                print("------")
                 print(last_date)
                 start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
             else:
+                print("new file for " + ticker)
                 start_date = (datetime.now() - timedelta(days=729)).strftime('%Y-%m-%d')
 
             end_date = datetime.now().strftime('%Y-%m-%d')
