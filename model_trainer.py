@@ -23,29 +23,48 @@ class TimeSeriesModel:
     def load_and_preprocess_data(self):
         df = pd.read_csv(self.data_file, skiprows=2, header=None)
         df.columns = ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Date', 'Ticker']
-        filtered_df = df[['Adj Close', 'Open', 'High', 'Low', 'Volume']]
+        df['Date'] = pd.to_datetime(df['Date'])
+        df['Ticker'] = df['Ticker'].astype('category').cat.codes
+        filtered_df = df[['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker']]
         filtered_df.dropna(inplace=True)
         print(filtered_df.isna().sum())
         print("---------------------------------------------")
         print(filtered_df.describe())
-        data = filtered_df.values.astype(np.float32)  # Ensure data is float32
+        data = filtered_df.values.astype(np.float32)  # Exclude 'Date' from conversion
         split_time = int(len(data) * 0.8)
         self.train_data = data[:split_time]
         self.val_data = data[split_time:]
         print(f"Training data shape: {self.train_data.shape}")
         print(f"Validation data shape: {self.val_data.shape}")
 
-    def create_windowed_dataset(self, dataset):
-        windowed_dataset = dataset.window(self.window_size + 1, shift=1, drop_remainder=True)
-        windowed_dataset = windowed_dataset.flat_map(lambda window: window.batch(self.window_size + 1))
-        windowed_dataset = windowed_dataset.map(lambda window: (tf.reshape(window[:-1], (self.window_size, 5)), tf.reshape(window[-1, 0], (1,))))
+    def create_windowed_dataset(self, dataset, window_size):
+        def windowed_data_generator():
+            # Iterate over each ticker group
+            for ticker, group in dataset.groupby('Ticker'):
+                # Extract relevant features for the current ticker group
+                group_data = group[['Adj Close', 'Open', 'High', 'Low', 'Volume']].values
+                # Create windows within the ticker group
+                for i in range(len(group_data) - window_size):
+                    window = group_data[i:i + window_size + 1]
+                    inputs = window[:-1]  # Input features for the model
+                    label = np.array([window[-1, 0]])  # Label (Adj Close of the last element in the window)
+                    yield (inputs, label)
+
+        # Define the output signature for the dataset
+        windowed_dataset = tf.data.Dataset.from_generator(
+            windowed_data_generator,
+            output_signature=(
+                tf.TensorSpec(shape=(window_size, 5), dtype=tf.float32),
+                tf.TensorSpec(shape=(1,), dtype=tf.float32)
+            )
+        )
         return windowed_dataset.batch(32).prefetch(1)
 
-    def prepare_datasets(self):
-        train_dataset = tf.data.Dataset.from_tensor_slices(self.train_data)
-        val_dataset = tf.data.Dataset.from_tensor_slices(self.val_data)
-        self.train_windowed_dataset = self.create_windowed_dataset(train_dataset)
-        self.val_windowed_dataset = self.create_windowed_dataset(val_dataset)
+    def prepare_datasets(self, window_size):
+        df_train = pd.DataFrame(self.train_data, columns=['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker'])
+        df_val = pd.DataFrame(self.val_data, columns=['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker'])
+        self.train_windowed_dataset = self.create_windowed_dataset(df_train, window_size)
+        self.val_windowed_dataset = self.create_windowed_dataset(df_val, window_size)
         print("Windowed datasets created for training and validation.")
 
     def build_model(self):
@@ -102,7 +121,7 @@ ts_model = TimeSeriesModel(data_file, model_output_file)
 
 ts_model.check_gpu()
 ts_model.load_and_preprocess_data()
-ts_model.prepare_datasets()
+ts_model.prepare_datasets(window_size=5)
 ts_model.build_model()
 ts_model.train_model(epochs=100)
 ts_model.save_model()

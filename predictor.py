@@ -4,6 +4,8 @@ import pandas as pd
 import tensorflow as tf
 
 SCALER_FILE = "/app/models/new_scaler.pkl"
+MODEL_FILE = "/app/models/20250410_model_v5.h5"
+
 
 # Load the scaler
 scaler = joblib.load(SCALER_FILE)
@@ -31,7 +33,7 @@ print(f"The normalized_new_values are: {normalized_new_values}")
 normalized_new_values = normalized_new_values.reshape(1, -1, 5)
 
 # Load the trained model
-model = tf.keras.models.load_model('/app/models/20250321_model_v5.h5')
+model = tf.keras.models.load_model(MODEL_FILE)
 
 # Predict the next value
 normalized_predicted_value = model.predict(normalized_new_values)
