@@ -4,7 +4,7 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 
-
+print(tf.config.list_physical_devices('GPU'))
 # Flag to choose feature set
 use_all_features = False  # Set to True for all features, False for "Change Adj Close" and "Volume"
 
@@ -29,7 +29,7 @@ joblib.dump(scaler_change_volume, "/app/models/scaler_change_volume.pkl")
 # File paths for scalers
 SCALER_ALL_FEATURES_FILE = "/app/models/scaler_all_features.pkl"
 SCALER_CHANGE_VOLUME_FILE = "/app/models/scaler_change_volume.pkl"
-MODEL_FILE = "/app/models/20250410_model_v5.h5"
+MODEL_FILE = "/app/models/20250422_model_v5.h5" #Price change only model trained on agm-karaudo/ml_trader_image_10
 
 
 # Load the appropriate scaler
