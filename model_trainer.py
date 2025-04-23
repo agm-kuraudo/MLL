@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 class TimeSeriesModel:
-    def __init__(self, data_file, model_output_file, window_size=5, use_all_features=True):
+    def __init__(self, data_file, model_output_file, window_size=5, use_all_features=True, predict_direction=False):
         self.data_file = data_file
         self.model_output_file = model_output_file
         self.window_size = window_size
         self.use_all_features = use_all_features
+        self.predict_direction = predict_direction
         self.train_data = None
         self.val_data = None
         self.train_windowed_dataset = None
@@ -27,11 +28,15 @@ class TimeSeriesModel:
         df['Date'] = pd.to_datetime(df['Date'])
         df['Ticker'] = df['Ticker'].astype('category').cat.codes
         df['Change Adj Close'] = df['Adj Close'].diff().fillna(0)
+        df['Label'] = np.where(df['Change Adj Close'] > 0, 1, 0)  # 1 for UP, 0 for DOWN
 
         if self.use_all_features:
-            filtered_df = df[['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker']]
+            filtered_df = df[
+                ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker', 'Label']] if self.predict_direction else df[
+                ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker']]
         else:
-            filtered_df = df[['Change Adj Close', 'Volume', 'Ticker']]
+            filtered_df = df[['Change Adj Close', 'Volume', 'Ticker', 'Label']] if self.predict_direction else df[
+                ['Change Adj Close', 'Volume', 'Ticker']]
 
         filtered_df.dropna(inplace=True)
         print(filtered_df.isna().sum())
@@ -52,27 +57,32 @@ class TimeSeriesModel:
                 else:
                     group_data = group[['Change Adj Close', 'Volume']].values
 
+                labels = group['Label'].values if self.predict_direction else group['Adj Close'].values
+
                 for i in range(len(group_data) - window_size):
-                    window = group_data[i:i + window_size + 1]
-                    inputs = window[:-1]
-                    label = np.array([window[-1, 0]])
-                    yield (inputs, label)
+                    window = group_data[i:i + window_size]
+                    label = labels[i + window_size] if self.predict_direction else np.array([labels[i + window_size]])
+                    yield (window, label)
 
         feature_count = 5 if self.use_all_features else 2
+        output_signature = (
+            tf.TensorSpec(shape=(window_size, feature_count), dtype=tf.float32),
+            tf.TensorSpec(shape=(), dtype=tf.int32) if self.predict_direction else tf.TensorSpec(shape=(1,),
+                                                                                                 dtype=tf.float32)
+        )
         windowed_dataset = tf.data.Dataset.from_generator(
             windowed_data_generator,
-            output_signature=(
-                tf.TensorSpec(shape=(window_size, feature_count), dtype=tf.float32),
-                tf.TensorSpec(shape=(1,), dtype=tf.float32)
-            )
+            output_signature=output_signature
         )
         return windowed_dataset.batch(32).prefetch(1)
 
     def prepare_datasets(self, window_size):
         if self.use_all_features:
-            columns = ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker']
+            columns = ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker', 'Label'] if self.predict_direction else [
+                'Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker']
         else:
-            columns = ['Change Adj Close', 'Volume', 'Ticker']
+            columns = ['Change Adj Close', 'Volume', 'Ticker', 'Label'] if self.predict_direction else [
+                'Change Adj Close', 'Volume', 'Ticker']
 
         df_train = pd.DataFrame(self.train_data, columns=columns)
         df_val = pd.DataFrame(self.val_data, columns=columns)
@@ -86,9 +96,13 @@ class TimeSeriesModel:
             tf.keras.layers.Input(shape=(self.window_size, feature_count)),
             tf.keras.layers.SimpleRNN(100, return_sequences=True),
             tf.keras.layers.SimpleRNN(100),
-            tf.keras.layers.Dense(1)
+            tf.keras.layers.Dense(1, activation='sigmoid' if self.predict_direction else None)
+            # Binary classification or regression
         ])
-        self.model.compile(loss="mse", optimizer=tf.keras.optimizers.SGD(momentum=0.9, learning_rate=1e-4))
+        loss = "binary_crossentropy" if self.predict_direction else "mse"
+        metrics = ['accuracy'] if self.predict_direction else []
+        self.model.compile(loss=loss, optimizer=tf.keras.optimizers.SGD(momentum=0.9, learning_rate=1e-4),
+                           metrics=metrics)
         print("Model defined and compiled.")
 
     def train_model(self, epochs=100):
@@ -130,14 +144,14 @@ class TimeSeriesModel:
 
 # Usage
 data_file = "/app/data/new_normalized_combined_data.csv"
-model_output_file = f'/app/models/{datetime.now().strftime("%Y%m%d")}_model_ten_steps.h5'
-ts_model = TimeSeriesModel(data_file, model_output_file, use_all_features=False, window_size=10)
+model_output_file = f'/app/models/{datetime.now().strftime("%Y%m%d")}_up_down.h5'
+ts_model = TimeSeriesModel(data_file, model_output_file, use_all_features=True, window_size=5, predict_direction=True)
 
 ts_model.check_gpu()
 ts_model.load_and_preprocess_data()
-ts_model.prepare_datasets(window_size=10)
+ts_model.prepare_datasets(window_size=5)
 ts_model.build_model()
-ts_model.train_model(epochs=100)
+ts_model.train_model(epochs=10)
 ts_model.save_model()
 ts_model.plot_loss()
 ts_model.plot_mae()
