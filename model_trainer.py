@@ -130,12 +130,12 @@ class TimeSeriesModel:
 
 # Usage
 data_file = "/app/data/new_normalized_combined_data.csv"
-model_output_file = f'/app/models/{datetime.now().strftime("%Y%m%d")}_model_v5.h5'
-ts_model = TimeSeriesModel(data_file, model_output_file, use_all_features=False)
+model_output_file = f'/app/models/{datetime.now().strftime("%Y%m%d")}_model_ten_steps.h5'
+ts_model = TimeSeriesModel(data_file, model_output_file, use_all_features=False, window_size=10)
 
 ts_model.check_gpu()
 ts_model.load_and_preprocess_data()
-ts_model.prepare_datasets(window_size=5)
+ts_model.prepare_datasets(window_size=10)
 ts_model.build_model()
 ts_model.train_model(epochs=100)
 ts_model.save_model()

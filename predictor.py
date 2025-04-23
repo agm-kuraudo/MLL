@@ -26,10 +26,11 @@ joblib.dump(scaler_change_volume, "/app/models/scaler_change_volume.pkl")
 
 
 
-# File paths for scalers
+# File paths for scaler
 SCALER_ALL_FEATURES_FILE = "/app/models/scaler_all_features.pkl"
 SCALER_CHANGE_VOLUME_FILE = "/app/models/scaler_change_volume.pkl"
-MODEL_FILE = "/app/models/20250422_model_v5.h5" #Price change only model trained on agm-karaudo/ml_trader_image_10
+#MODEL_FILE = "/app/models/20250422_model_v5.h5" #Price change only model trained on "agm-karaudo/ml_trader_image_10"
+MODEL_FILE = "/app/models/20250422_model_ten_steps.h5" #Price change only - window size ten - model trained on "agm-karaudo/ml_trader_image_10"
 
 
 # Load the appropriate scaler
@@ -52,7 +53,12 @@ else:
         [-0.07, 12186227],  # Time step 2
         [-3.26, 147803],  # Time step 3
         [3.32, 2596288],  # Time step 4
-        [0.34, 1744757]   # Time step 5 (most recent)
+        [0.34, 1744757],   # Time step 5 (most recent)
+        [0.0, 3618437],  # Time step 1 (oldest)
+        [-0.07, 12186227],  # Time step 2
+        [-3.26, 147803],  # Time step 3
+        [3.32, 2596288],  # Time step 4
+        [0.34, 1744757]  # Time step 5 (most recent)
     ])
     columns = ['Change Adj Close', 'Volume']
 
@@ -91,6 +97,3 @@ if use_all_features:
     print(f"The predicted next Adj Close value is: {predicted_value}")
 else:
     print(f"The predicted next change in Adj Close is: {predicted_value}")
-
-
-#20250410_model_v5.h5   Change in Adjusted Close Predictor
