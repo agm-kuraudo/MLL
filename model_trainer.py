@@ -2,8 +2,9 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-# from kerastuner.tuners import RandomSearch
+from kerastuner.tuners import RandomSearch
 from datetime import datetime
+import json
 
 class TimeSeriesModel:
     def __init__(self, data_file, model_output_file, window_size=5, use_all_features=True, predict_direction=False):
@@ -90,20 +91,63 @@ class TimeSeriesModel:
         self.val_windowed_dataset = self.create_windowed_dataset(df_val, window_size)
         print("Windowed datasets created for training and validation.")
 
-    def build_model(self):
+    def build_model(self, hp=None):
         feature_count = 5 if self.use_all_features else 2
-        self.model = tf.keras.models.Sequential([
-            tf.keras.layers.Input(shape=(self.window_size, feature_count)),
-            tf.keras.layers.SimpleRNN(100, return_sequences=True),
-            tf.keras.layers.SimpleRNN(100),
-            tf.keras.layers.Dense(1, activation='sigmoid' if self.predict_direction else None)
-            # Binary classification or regression
-        ])
+
+        # Load saved hyperparameters if available
+        try:
+            with open('/app/models/best_hyperparameters.json', 'r') as f:
+                saved_hyperparameters = json.load(f)
+                units = saved_hyperparameters['units']
+                learning_rate = saved_hyperparameters['learning_rate']
+                momentum = saved_hyperparameters['momentum']
+        except FileNotFoundError:
+            units = hp.Int('units', min_value=50, max_value=200, step=50)
+            learning_rate = hp.Float('learning_rate', min_value=1e-5, max_value=1e-3, sampling='LOG')
+            momentum = hp.Float('momentum', min_value=0.0, max_value=0.9, step=0.1)
+
+        model = tf.keras.models.Sequential()
+        model.add(tf.keras.layers.Input(shape=(self.window_size, feature_count)))
+        for i in range(hp.Int('num_layers', 1, 3) if hp else 2):  # Default to 2 layers if hp is None
+            model.add(tf.keras.layers.GRU(units=units, return_sequences=True))
+        model.add(tf.keras.layers.GRU(units=units))  # Ensure the last GRU layer does not return sequences
+        model.add(tf.keras.layers.Dense(1, activation='sigmoid' if self.predict_direction else None))  # Single output
         loss = "binary_crossentropy" if self.predict_direction else "mse"
         metrics = ['accuracy'] if self.predict_direction else []
-        self.model.compile(loss=loss, optimizer=tf.keras.optimizers.SGD(momentum=0.9, learning_rate=1e-4),
-                           metrics=metrics)
-        print("Model defined and compiled.")
+        model.compile(
+            loss=loss,
+            optimizer=tf.keras.optimizers.SGD(momentum=momentum, learning_rate=learning_rate),
+            metrics=metrics
+        )
+        return model
+
+    def tune_hyperparameters(self):
+        tuner = RandomSearch(
+            self.build_model,
+            objective='accuracy',
+            max_trials=10,
+            executions_per_trial=1,  # Set to 1 for faster tuning
+            directory='my_dir',
+            project_name='time_series_tuning'
+        )
+        tuner.search(self.train_windowed_dataset, epochs=5, validation_data=self.val_windowed_dataset)
+        self.model = tuner.get_best_models(num_models=1)[0]
+        print("Hyperparameter tuning completed.")
+
+        # Save the best model
+        self.model.save(self.model_output_file)
+        print("Best model saved successfully.")
+
+        # Save the best hyperparameters
+        best_hyperparameters = tuner.get_best_hyperparameters(num_trials=1)[0]
+        hyperparameters_dict = {
+            'units': best_hyperparameters.get('units'),
+            'learning_rate': best_hyperparameters.get('learning_rate'),
+            'momentum': best_hyperparameters.get('momentum')
+        }
+        with open('/app/models/best_hyperparameters.json', 'w') as f:
+            json.dump(hyperparameters_dict, f)
+        print("Best hyperparameters saved successfully.")
 
     def train_model(self, epochs=100):
         self.history = self.model.fit(self.train_windowed_dataset, epochs=epochs, validation_data=self.val_windowed_dataset, verbose=1)
@@ -150,8 +194,14 @@ ts_model = TimeSeriesModel(data_file, model_output_file, use_all_features=True, 
 ts_model.check_gpu()
 ts_model.load_and_preprocess_data()
 ts_model.prepare_datasets(window_size=5)
+
+# First run: tune hyperparameters
+ts_model.tune_hyperparameters()
+
+
+# Subsequent runs: use saved hyperparameters
 ts_model.build_model()
-ts_model.train_model(epochs=10)
+ts_model.train_model(epochs=100)
 ts_model.save_model()
 ts_model.plot_loss()
 ts_model.plot_mae()

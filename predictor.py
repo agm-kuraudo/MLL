@@ -34,7 +34,7 @@ SCALER_ALL_FEATURES_FILE = "/app/models/scaler_all_features.pkl"
 SCALER_CHANGE_VOLUME_FILE = "/app/models/scaler_change_volume.pkl"
 #MODEL_FILE = "/app/models/20250422_model_v5.h5" #Price change only model trained on "agm-karaudo/ml_trader_image_10"
 #MODEL_FILE = "/app/models/20250422_model_ten_steps.h5" #Price change only - window size ten - model trained on "agm-karaudo/ml_trader_image_10"
-MODEL_FILE = "/app/models/20250423_up_down.h5" #all features, up / down binary classifier - window size five only ten epochs - pretty rubbish at moment - model trained on "agm-karaudo/ml_trader_image_10"
+MODEL_FILE = "/app/models/20250424_up_down.h5" #all features, up / down binary classifier - window size five only ten epochs - pretty rubbish at moment - model trained on "agm-karaudo/ml_trader_image_10"
 
 
 # Load the appropriate scaler
