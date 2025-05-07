@@ -15,7 +15,7 @@ RUN apt-get update -y && \
     apt-get install -y tensorrt
 
 # Install TensorFlow and other Python packages with NumPy <2
-RUN python3 -m pip install "numpy<2" tensorflow==2.8.0 pillow scipy tensorflow-datasets beautifulsoup4 matplotlib PyQt5 tk-tools pandas scikit-learn yfinance keras-tuner
+RUN python3 -m pip install "numpy<2" tensorflow==2.8.0 pillow scipy tensorflow-datasets beautifulsoup4 matplotlib PyQt5 tk-tools pandas scikit-learn yfinance==0.2.58 keras-tuner
 
 # Set python3 as the default python
 RUN ln -s /usr/bin/python3 /usr/bin/python

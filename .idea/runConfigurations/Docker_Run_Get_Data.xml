@@ -2,7 +2,7 @@
   <configuration default="false" name="Docker Run Get Data" type="docker-deploy" factoryName="docker-image" server-name="Docker">
     <deployment type="docker-image">
       <settings>
-        <option name="imageTag" value="agm-karaudo/ml_trader_image_09" />
+        <option name="imageTag" value="agm-karaudo/ml_trader_image_10" />
         <option name="attachToContainerNeeded" value="true" />
         <option name="command" value="python /app/get_data.py" />
         <option name="containerName" value="mll-getdata-container" />

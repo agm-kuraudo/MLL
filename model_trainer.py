@@ -2,7 +2,7 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from kerastuner.tuners import RandomSearch
+from keras_tuner.tuners import RandomSearch
 from datetime import datetime
 import json
 
@@ -32,17 +32,20 @@ class TimeSeriesModel:
         df['Label'] = np.where(df['Change Adj Close'] > 0, 1, 0)  # 1 for UP, 0 for DOWN
 
         if self.use_all_features:
-            filtered_df = df[
-                ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker', 'Label']] if self.predict_direction else df[
-                ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker']]
+            if self.predict_direction:
+                filtered_df = df.loc[:, ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker', 'Label']]
+            else:
+                filtered_df = df.loc[:, ['Adj Close', 'Open', 'High', 'Low', 'Volume', 'Ticker']]
         else:
-            filtered_df = df[['Change Adj Close', 'Volume', 'Ticker', 'Label']] if self.predict_direction else df[
-                ['Change Adj Close', 'Volume', 'Ticker']]
+            if self.predict_direction:
+                filtered_df = df.loc[:, ['Change Adj Close', 'Volume', 'Ticker', 'Label']]
+            else:
+                filtered_df = df.loc[:, ['Change Adj Close', 'Volume', 'Ticker']]
 
         filtered_df.dropna(inplace=True)
-        print(filtered_df.isna().sum())
-        print("---------------------------------------------")
-        print(filtered_df.describe())
+        #print(filtered_df.isna().sum())
+        #print("---------------------------------------------")
+        #print(filtered_df.describe())
         data = filtered_df.values.astype(np.float32)
         split_time = int(len(data) * 0.8)
         self.train_data = data[:split_time]
@@ -101,14 +104,16 @@ class TimeSeriesModel:
                 units = saved_hyperparameters['units']
                 learning_rate = saved_hyperparameters['learning_rate']
                 momentum = saved_hyperparameters['momentum']
+                layer_count = saved_hyperparameters['num_layers']
         except FileNotFoundError:
             units = hp.Int('units', min_value=50, max_value=200, step=50)
             learning_rate = hp.Float('learning_rate', min_value=1e-5, max_value=1e-3, sampling='LOG')
             momentum = hp.Float('momentum', min_value=0.0, max_value=0.9, step=0.1)
+            layer_count = hp.Int('num_layers', 0, 3)
 
         model = tf.keras.models.Sequential()
         model.add(tf.keras.layers.Input(shape=(self.window_size, feature_count)))
-        for i in range(hp.Int('num_layers', 1, 3) if hp else 2):  # Default to 2 layers if hp is None
+        for i in range(layer_count):
             model.add(tf.keras.layers.GRU(units=units, return_sequences=True))
         model.add(tf.keras.layers.GRU(units=units))  # Ensure the last GRU layer does not return sequences
         model.add(tf.keras.layers.Dense(1, activation='sigmoid' if self.predict_direction else None))  # Single output
@@ -125,7 +130,7 @@ class TimeSeriesModel:
         tuner = RandomSearch(
             self.build_model,
             objective='accuracy',
-            max_trials=10,
+            max_trials=20,
             executions_per_trial=1,  # Set to 1 for faster tuning
             directory='my_dir',
             project_name='time_series_tuning'
@@ -143,7 +148,8 @@ class TimeSeriesModel:
         hyperparameters_dict = {
             'units': best_hyperparameters.get('units'),
             'learning_rate': best_hyperparameters.get('learning_rate'),
-            'momentum': best_hyperparameters.get('momentum')
+            'momentum': best_hyperparameters.get('momentum'),
+            'num_layers': best_hyperparameters.get('num_layers')
         }
         with open('/app/models/best_hyperparameters.json', 'w') as f:
             json.dump(hyperparameters_dict, f)
@@ -154,7 +160,7 @@ class TimeSeriesModel:
         print("Model training completed.")
 
     def save_model(self):
-        self.model.save(self.model_output_file)
+        self.model.save(self.model_output_file, save_format='tf')
         print("Model saved successfully.")
 
     def plot_loss(self):
@@ -188,7 +194,7 @@ class TimeSeriesModel:
 
 # Usage
 data_file = "/app/data/new_normalized_combined_data.csv"
-model_output_file = f'/app/models/{datetime.now().strftime("%Y%m%d")}_up_down.h5'
+model_output_file = f'/app/models/{datetime.now().strftime("%Y%m%d")}_up_down'
 ts_model = TimeSeriesModel(data_file, model_output_file, use_all_features=True, window_size=5, predict_direction=True)
 
 ts_model.check_gpu()
