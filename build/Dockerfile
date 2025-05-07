@@ -23,6 +23,9 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Downgrade protobuf to 3.20.x
 RUN python3 -m pip install protobuf==3.20.0
 
+# Install SQL Alchemy
+RUN python3 -m pip install sqlalchemy psycopg2-binary
+
 # Set environment variables for CUDA and PTXAS
 ENV PATH=/usr/local/cuda-11.8/bin${PATH:+:${PATH}}
 ENV LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}

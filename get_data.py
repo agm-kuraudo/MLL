@@ -6,15 +6,20 @@ from sklearn.preprocessing import MinMaxScaler
 import joblib
 import sys
 from datetime import datetime, timedelta
+from sqlalchemy import create_engine
 
 class StockDataProcessor:
 
     SCALER_FILE = "/app/models/new_scaler.pkl"
     NORMALISED_DATA_FILE = "/app/data/new_normalized_combined_data.csv"
+    POSTGRES_PASSWORD = "NOT_SET"
 
     def __init__(self, directory="/app/new_stock_data"):
         self.directory = directory
         self.combined_data = pd.DataFrame()
+
+        if self.POSTGRES_PASSWORD != "NOT_SET":
+            self.engine = create_engine(f"postgresql+psycopg2://postgres:{self.POSTGRES_PASSWORD}@172.17.0.3:5432/ml_trader")
 
     def download_data(self, tickers):
         os.makedirs(self.directory, exist_ok=True)
@@ -35,6 +40,7 @@ class StockDataProcessor:
 
             try:
                 new_data = yf.download(ticker, start=start_date, end=end_date, interval='1h')
+
                 if new_data.empty:
                     raise ValueError(
                         f"Failed download: {ticker}: YFPricesMissingError('possibly de-listed; no price data found (1h {start_date} -> {end_date})')"
@@ -68,6 +74,11 @@ class StockDataProcessor:
                         print(f"Filtered DataFrame shape: {filtered_data.shape}")
                         filtered_data.loc[:, 'Ticker'] = ticker
                         self.combined_data = pd.concat([self.combined_data, filtered_data])
+
+                        if self.POSTGRES_PASSWORD != "NOT_SET":
+                            # Replace 'table_name' with the name of the table you want to insert the data into
+                            self.combined_data.to_sql(ticker, self.engine, schema='ml', if_exists='replace', index=False)
+
                     except Exception as e:
                         print(f"Error processing file {filename}: {e}")
 
