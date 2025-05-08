@@ -11,8 +11,9 @@ from sqlalchemy import create_engine
 class StockDataProcessor:
 
     SCALER_FILE = "/app/models/new_scaler.pkl"
+    COMBINED_DATA_FILE = "/app/data/combined_data.csv"
     NORMALISED_DATA_FILE = "/app/data/new_normalized_combined_data.csv"
-    POSTGRES_PASSWORD = "NOT_SET"
+    POSTGRES_PASSWORD = "NOT_SET"   #Add actual postgres password to output stock data to DB
 
     def __init__(self, directory="/app/new_stock_data"):
         self.directory = directory
@@ -83,7 +84,9 @@ class StockDataProcessor:
                         print(f"Error processing file {filename}: {e}")
 
         self.combined_data.reset_index(drop=True, inplace=True)
-        #print (self.combined_data.head())
+        # Save the combined data before normalization
+        self.combined_data.to_csv(self.COMBINED_DATA_FILE, index=False)
+        print("The combined dataset has been saved to 'combined_data.csv'.")
 
     def normalize_data(self):
         scaler = MinMaxScaler()

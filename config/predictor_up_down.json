@@ -1,0 +1,9 @@
+{
+    "use_all_features": true,
+    "predict_direction": true,
+    "columns_all_features": ["Adj Close", "Open", "High", "Low", "Volume"],
+    "columns_change_volume": ["Change Adj Close", "Volume"],
+    "combined_data_path": "/app/data/combined_data.csv",
+    "ticker": "SPY",
+    "MODEL_FILE": "/app/models/20250424_up_down"
+}
